@@ -1,0 +1,80 @@
+body {
+	margin: 20px;
+}
+
+.node {
+	stroke: #000;
+	fill: #ddd;
+	stroke-width: 1px;
+}
+
+.link {
+	stroke: #999;
+	stroke-opacity: 0.5;
+	stroke-width: 1px;
+}
+
+.choice1 {
+	background-color: coral;
+}
+
+marker {
+	stroke: #999;
+	fill: rgba(0, 0, 0, 0);
+}
+
+.marker-end-fill {
+	stroke: #999;
+	fill: #999;
+}
+
+.marker-end-no-fill {
+	stroke: #999;
+	fill: rgba(0, 0, 0, 0);
+}
+
+.node-text {
+	font: 11px sans-serif;
+}
+
+.link-text {
+	font: 9px sans-serif;
+	fill: grey;
+}
+
+.path {
+	fill: none;
+	stroke: #999;
+	stroke-opacity: 0.5;
+	stroke-width: 1px;
+}
+
+path.invis, path.hidden {
+	fill: none;
+	stroke-width: 0;
+}
+
+path.cardinality0 {
+	fill: #900;
+	stroke-width: 5;
+}
+
+.hidden {
+	fill: none;
+	stroke-width: 0;
+}
+
+svg {
+	border: 1px solid black;
+	display: inline-block;
+}
+
+.filter_options {
+	margin-top: 10px;
+	max-width: 300px !important;
+	min-width: 180px !important;
+}
+
+.checkbox>.children {
+	cursor: pointer;
+}

@@ -1,0 +1,50 @@
+Načítá data z out/out.js
+
+Ovládání (mody):
+A - pohybuje s označeným uzlem / zobrazí nejbližší okolí
+B - po kliknutí na hranu zobrazí detail vlastnosti
+C - highlighting části grafu
+D - odstraní dynamicky vybrané uzly z grafu
+
+FIX - zamykání pozice nakliknutého uzlu
+STOP - přerušení fyzikální simulace (roztažení objektů po canvasu)
+
+
+-------TODO------
+A:
+přemístit zobrazení nejbližšího okolí do E
+
+B:
+Připravit variantu pro vstup {1:5, 2:3, 4:1} místo {1,1,1,1,1,2,2,2,4}.
+Nezpracovávat kliknutí na uzel (momentálně nejsou žádné data, které by se vypisovala pro uzel).
+
+C:
+Pokud zruším označení hrany a tím by zbyl izolovaný uzel na jednom z konců (nejdnou do/z něj další označené hrany), zrušit označení i daného uzlu.
+
+D: 
+Občas se špatně přečíslovali někde indexy a pak např. mode B zobrazoval údaje pro jinou hranu, než které byla nakliknuta. Nepovedlo se mi to teď reprodukovat tak jsem to možná už fixnul.
+Volbu aplikovat i do filtračního seznamu.
+
+Přidat mode E. Po kliknutí na uzel se zobrazí/skryjí datatype vlastnosti vázané na daný uzel. Pokud je mezi uzly více hran stejné orientace, v tomto módu lze přepínat mezi zobrazením všech a sjednocením těchto hran do jedné pseudo-vlastnosti (hrany) s textovým popiskem "<< X >>", kde X je počet sloučených vlastností.
+
+Hrany se stejnou orientací mezi stejnými uzly upravit tak, aby se nepřekrývali. 
+
+Classes filter předělat na dynamické přidávání/odebírání elementů (něco jako D), nedělat kompletní reload simlulace, aby se uživatel neztratil.
+
+Přidat indikaci (asi přes css) locked statusu na uzlu a existence datatype properties k rozkliknutí (mode E) 
+
+Dotaz je pouze jako mockup. Generovat dle aktivní selekce (mode C), nástřel algoritmu:
+* Najít vstupní uzel grafu (má pouze odchozí hrany)
+* Uvést rdf:type trojici pro uzel.
+* Vypsat trojice pro datatype properties z daného uzlu.
+* Procházet na další uzel (depth-first kvůli zanořování OPTIONAL bloku)
+Tím je vytvořen WHERE blok, pak do SELECT vyjmenovat použité proměnné.
+Pro minCardinality=0 vlastnosti přidat podbarvení s přepínáním OPTIONAL wrapu. Wrap bude kolem jednoho tripletu v případě datatype property. Pro object property je nutné wrapnout všechno, co z daného uzlu bylo poté procházeno (proto depth-first).
+Pro maxCardinality!=1 umožnit GROUPBY agregaci, tj. proměnná je buď obalena agregační funkcí v SELECT části, nebo je vyjmenovaná v GROUP BY části.
+
+Zobrazit warning symbol + tooltip pro 2 divné stavy:  
+* pokud výběr netvoří spojitý graf
+* pokud je mezi 2 uzly vybráno více cest
+
+
+vyhodit JS bokem do souboru, aby to nebylo přímo v html? 

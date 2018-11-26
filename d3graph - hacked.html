@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Visualizing RDF using D3</title>
+
+    <meta http-equiv="X-UA-Compatible" content="IE=8 chrome=1">
+
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+        crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
+        crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <link rel="stylesheet" href="style.css" />
+
+</head>
+
+<body>
+    <h1>Visualizing RDF using D3</h1>
+
+    <div class="col-xs-12">
+    </div>
+
+    <div class="col-xs-12">
+        <p>mode: <span id="editmode">-</span></p>
+        <button onclick="switchMode('a')">a</button>
+        <button onclick="switchMode('b')">b</button>
+        <button onclick="switchMode('c')">c</button>
+        <button onclick="switchMode('d')">d</button>
+        <button onclick="switchMode('e')">e</button>
+
+        <button onclick="switchMode('fix')">fix</button>
+        <button onclick="d3.selectAll('.fixed-node').each(function(d) {d.fixed = true;})">stop</button>
+    </div>
+
+    <div class="col-xs-12">&nbsp;</div>
+
+    <div class="col-xs-3">
+        <div class="panel panel-default">
+            <div class="panel-heading">Available classes</div>
+
+            <div class="filter_options" style="padding-left:4px; padding-right:4px" id="checkboxes"></div>
+        </div>
+
+
+        <div class="panel panel-default">
+            <div class="panel-heading">Selection detail</div>
+
+            <div id="histo" style="padding-left:4px; padding-right:4px">
+                <div style="text-align: left;">
+                    <span id="value-subjectType" style="font-weight: bold;">Unique ?s</span> (<span id="value-distinctSubject">???</span>)
+                </div>
+                <div style="text-align: center;">
+                    –[ <span id="value-propertyType" style="font-weight: bold;">Triples</span> (<span id="value-triples">???</span>)
+                    ]⬎
+                </div>
+                <div style="text-align: right;">
+                    <span id="value-objectType" style="font-weight: bold;">Unique ?o</span> (<span id="value-distinctObject">???</span>)
+                </div>
+                <p> Cardinality histogram: </p>
+            </div>
+
+        </div>
+
+    </div>
+    <div class="col-xs-9">
+        <div id="svg-body"></div>
+    </div>
+
+    <div class="col-xs-12">
+    </div>
+
+    <pre class="col-xs-6">
+<!-- 
+HACK
+FIXME: generate from highlighted selection
+-->      
+      
+SELECT 
+?NodePatient
+?title
+?Patient_ID
+?Patient_s_Name
+?Patient_s_Sex
+?NodeStudy
+(count(<span class="choice1">?NodeSeries</span>) as ?countNodeSeries)
+
+WHERE {
+  ?NodePatient a dcm:Patient .
+  OPTIONAL { ?NodePatient <span class="choice1">dc:title</span> ?title . }
+  ?NodePatient dcm:Patient_ID ?Patient_ID .
+  ?NodePatient dcm:Patient_s_Name ?Patient_s_Name .
+  ?NodePatient dcm:Patient_s_Sex ?Patient_s_Sex .
+    
+  OPTIONAL { 
+  ?NodePatient <span class="choice1">dcm:has_study</span> ?NodeStudy . 
+  ?NodeStudy a dcm:Study .
+
+  ?NodeStudy dcm:contains_series ?NodeSeries .
+  ?NodeSeries a dcm:Series .
+  }  
+}
+GROUP BY ?NodePatient ?title ?Patient_ID ?Patient_s_Name ?Patient_s_Sex ?NodeStudy
+</pre>
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+        crossorigin="anonymous"></script>
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+
+    <script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"></script>
+
+    <script src="out/out.js"></script>
+
+    <script src="main.js"> </script>
+
+</body>
+
+</html>
