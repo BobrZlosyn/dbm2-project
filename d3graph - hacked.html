@@ -78,12 +78,12 @@
     </div>
 
     <pre class="col-xs-6">
-<!-- 
+<!--
 HACK
 FIXME: generate from highlighted selection
--->      
-      
-SELECT 
+-->
+
+SELECT
 ?NodePatient
 ?title
 ?Patient_ID
@@ -98,14 +98,14 @@ WHERE {
   ?NodePatient dcm:Patient_ID ?Patient_ID .
   ?NodePatient dcm:Patient_s_Name ?Patient_s_Name .
   ?NodePatient dcm:Patient_s_Sex ?Patient_s_Sex .
-    
-  OPTIONAL { 
-  ?NodePatient <span class="choice1">dcm:has_study</span> ?NodeStudy . 
+
+  OPTIONAL {
+  ?NodePatient <span class="choice1">dcm:has_study</span> ?NodeStudy .
   ?NodeStudy a dcm:Study .
 
   ?NodeStudy dcm:contains_series ?NodeSeries .
   ?NodeSeries a dcm:Series .
-  }  
+  }
 }
 GROUP BY ?NodePatient ?title ?Patient_ID ?Patient_s_Name ?Patient_s_Sex ?NodeStudy
 </pre>
@@ -123,7 +123,12 @@ GROUP BY ?NodePatient ?title ?Patient_ID ?Patient_s_Name ?Patient_s_Sex ?NodeStu
 
     <script src="out/out.js"></script>
 
-    <script src="main.js"> </script>
+    <script src="visualisationJS/update_graph.js"> </script>
+    <script src="visualisationJS/histogram.js"> </script>
+    <script src="visualisationJS/mode_selection.js"> </script>
+    <script src="visualisationJS/graph.js"> </script>
+    <script src="visualisationJS/filters_validators.js"> </script>
+    <script src="init.js"> </script>
 
 </body>
 
