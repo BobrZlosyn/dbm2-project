@@ -24,9 +24,13 @@ var check_value;
 
 
 var parentElement;
-
+var enableClickableNodes;
+var enableClickablePaths;
 
 $(document).ready(function() {
+  enableClickableNodes = false;
+  enableClickablePaths = true;
+
   highlightedElements = { nodes: {}, paths: {} };
 
   //prepare data
@@ -121,13 +125,27 @@ function applyStyle() {
         return color(d.type);
     });
 
-    nodes.on('click', clickedElement);
+    clickableNodes(enableClickableNodes);
+    clickablePaths(enableClickablePaths);
+    
     nodes.call(force.drag);
-    paths.on('click', clickedElement);
     paths.call(force.drag);
-    nodeTexts.on('click', clickedElement);
+
     nodeTexts.call(force.drag);
-    pathTexts.on('click', clickedElement);
     pathTexts.call(force.drag);
 
+}
+
+function clickableNodes (isEnable) {
+  if (isEnable) {
+    nodes.on('click', clickedElement);
+    nodeTexts.on('click', clickedElement);
+  }
+}
+
+function clickablePaths (isEnable) {
+  if (isEnable) {
+    paths.on('click', clickedElement);
+    pathTexts.on('click', clickedElement);
+  }
 }

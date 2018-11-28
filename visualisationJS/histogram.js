@@ -83,3 +83,7 @@ function drawHistogram(values) {
             return "translate(" + (x(data[0].dx) - x(0)) / 2 + "," + 0 + ")";
         });
 }
+
+function drawHistogramAdvanced(values) {
+
+}]
