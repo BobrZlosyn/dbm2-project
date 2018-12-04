@@ -14,7 +14,6 @@ var linkedByIndex = {};
 
 //load from input file
 var triples = INPUT_DATA.Triples;
-console.log(triples);
 
 var filtered = triples.filter(function (item) {
     return item.objectType != 'Literal' || (item.objectType == 'Literal' && item.subject == 'Patient');
@@ -31,6 +30,7 @@ var svg = d3.select("#svg-body").append("svg")
 var force = d3.layout.force().size([500, 625]);
 
 var graph = triplesToGraph(triples, []);
+console.log(graph);
 var check_value = gainTypesFromTriples(triples);
 check_value.sort(function (a, b) {
     if (a == 'Literal' || a == '???') return -1;
@@ -527,24 +527,31 @@ function highlight(obj) {
 
     if (obj.classList.contains('node')) {
         if (highlightedElements.nodes[d.id] == 1) {
+            // already highlighted - toggle highlight off
             highlightedElements.nodes[d.id] = 0;
         } else {
+            // toggle highlight on
             highlightedElements.nodes[d.id] = 1;
         }
+    
+        // non-node - literal?
     } else if (obj.classList.contains('link-text') || obj.classList.contains('path')) {
         switchOn = highlightedElements.paths[d.id] != 1;
 
+        // toggle on
         if (switchOn) {
             highlightedElements.paths[d.id] = 1;
             highlightedElements.nodes[d.source.id] = 1;
             highlightedElements.nodes[d.target.id] = 1;
+        // toggle off
         } else {
             highlightedElements.paths[d.id] = 0;
+            unhighlightNodesIfNoPath();
         }
 
     }
 
-    console.log(highlightedElements);
+   
 
 
     nodes.style("opacity", function (o) {
@@ -558,8 +565,47 @@ function highlight(obj) {
     pathTexts.style("opacity", function (o) {
         return highlightedElements.paths[o.id] == 1 ? 1 : 0.5;
     });
+
 }
 
+function unhighlightNodesIfNoPath() {
+
+    for (var node in highlightedElements.nodes) {
+        var isolated = true;
+
+        for (var path in highlightedElements.paths) {
+            var p = graph.links[path];
+
+            // if the path in hightelements is 1 (active) and if the path source or target are our node - it is not isolated
+            if (highlightedElements.paths[path] == 1 && (p.source.id == node || p.target.id == node)) {
+                isolated = false;
+                break;
+                // breaking because we found at least one path
+            }
+        }
+            
+    
+        if (isolated) {
+            highlightedElements.nodes[node] = 0;
+        }
+
+    }
+
+}
+
+function generateQuery() {
+    console.log(highlightedElements);
+
+    
+}
+
+Object.size = function(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
+};
 
 function removeSvgElement(obj) {
     d = obj.__data__;
