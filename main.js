@@ -568,6 +568,9 @@ function highlight(obj) {
 
 }
 
+/**
+ * toggles highlight off from nodes that are isolated (no path exists between them and rest of highlighted nodes)
+ */
 function unhighlightNodesIfNoPath() {
 
     for (var node in highlightedElements.nodes) {
@@ -576,7 +579,7 @@ function unhighlightNodesIfNoPath() {
         for (var path in highlightedElements.paths) {
             var p = graph.links[path];
 
-            // if the path in hightelements is 1 (active) and if the path source or target are our node - it is not isolated
+            // if the path in highlightedElements is 1 (active) and if the path source or target are our node - it is not isolated
             if (highlightedElements.paths[path] == 1 && (p.source.id == node || p.target.id == node)) {
                 isolated = false;
                 break;
@@ -596,16 +599,55 @@ function unhighlightNodesIfNoPath() {
 function generateQuery() {
     console.log(highlightedElements);
 
-    
+   // pokud vyber netvori spojity graf
+
+   // pokud existuje mezi dvema uzly vice cest
+
+    var start = findStartingNode();
+
+    if (start == null) {
+        document.getElementById("query").innerHTML ="No starting point for query generation!";
+    } else {
+        document.getElementById("query").innerHTML = "";
+    }
+
+    console.log(graph.nodes[start]);
 }
 
-Object.size = function(obj) {
-    var size = 0, key;
-    for (key in obj) {
-        if (obj.hasOwnProperty(key)) size++;
+/**
+ * finds a starting node which has no incoming paths
+ * returns first starting node found
+ */
+function findStartingNode() {
+
+    for (var node in highlightedElements.nodes) {
+
+        var incoming = false;
+
+        if (highlightedElements.nodes[node] == 0) {
+            continue;
+        }
+
+        for (var path in highlightedElements.paths) {
+            var p = graph.links[path];
+
+            if (highlightedElements.paths[path] == 1 && p.target.id == node) {
+                incoming = true;
+                break;
+            }
+
+        }
+
+        if (incoming == false) {
+            // starting node
+            return node;
+        }
+
     }
-    return size;
-};
+
+    return null;
+
+}
 
 function removeSvgElement(obj) {
     d = obj.__data__;
