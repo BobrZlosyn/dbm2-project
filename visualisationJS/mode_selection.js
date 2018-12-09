@@ -65,11 +65,10 @@ function highlight(obj) {
             highlightedElements.nodes[d.target.id] = 1;
         } else {
             highlightedElements.paths[d.id] = 0;
+            unhighlightNodesIfNoPath();
         }
 
     }
-
-    console.log(highlightedElements);
 
 
     nodes.style("opacity", function (o) {
@@ -83,6 +82,382 @@ function highlight(obj) {
     pathTexts.style("opacity", function (o) {
         return highlightedElements.paths[o.id] == 1 ? 1 : 0.5;
     });
+}
+
+
+/**
+ * toggles highlight off from nodes that are isolated (no path exists between them and rest of highlighted nodes)
+ */
+function unhighlightNodesIfNoPath() {
+
+    for (var node in highlightedElements.nodes) {
+        var isolated = true;
+
+        for (var path in highlightedElements.paths) {
+            var p = graph.links[path];
+
+            // if the path in highlightedElements is 1 (active) and if the path source or target are our node - it is not isolated
+            if (highlightedElements.paths[path] == 1 && (p.source.id == node || p.target.id == node)) {
+                isolated = false;
+                break;
+                // breaking because we found at least one path
+            }
+        }
+
+
+        if (isolated) {
+            highlightedElements.nodes[node] = 0;
+        }
+
+    }
+
+}
+
+function generateQuery() {
+    console.log(highlightedElements);
+
+    // pokud vyber netvori spojity graf
+
+    // pokud existuje mezi dvema uzly vice cest
+
+    var start = findStartingNode();
+
+    if (start == null) {
+        // no starting node
+        return;
+    }
+
+    var select = {
+        variables: [],
+        where: [],
+    }
+
+    var stack = [];
+    var supportingStack = [];
+
+    stack.push(start);
+    supportingStack.push(start);
+
+    while (stack.length > 0) {
+
+        var v = stack.pop();
+        var supportV = supportingStack.pop();
+
+        addSelectedPathToNode(v, supportV, select);
+
+        addSelectedProperties(v, select);
+
+        addNeighbouringSelectedNodesToStack(v, stack, supportingStack);
+
+    }
+
+    console.log(triples);
+
+    printSelectQuery(select);
+
+}
+
+function addSelectedPathToNode(v, supportV, select) {
+
+    if (v == supportV) {
+        var triple = getTripleBySubject(graph.nodes[v].label);
+
+        var rdfType = {
+            node: v,
+            subject: triple.subject,
+            predicate: "a",
+            object: triple.subjectTypePrefixed,
+            property: false,
+            children: []
+        };
+
+        select.variables.push(triple.subject);
+
+        select.where.push(rdfType);
+
+        return rdfType.optional;
+    }
+    else {
+        for (var i = 0; i < graph.links.length; i++) {
+            var link = graph.links[i];
+
+            if (highlightedElements.paths[link.id] == 1 // selected path
+                && link.source.id == supportV // from last visited
+                && link.target.id == v // to our node
+            ) {
+                var triple = getTripleBySubjectAndPredicate(link.source.label, link.predicate);
+
+                var rdfTriple = {
+                    node: v,
+                    subject: triple.subject,
+                    predicate: triple.predicateTypePrefixed,
+                    object: "?" + triple.object,
+                    property: false,
+                    optional: false,
+                    children: []
+                };
+
+                if (triple.cardinalityMin == 0) {
+                    rdfTriple.optional = true;
+                }
+
+                var rdfType = {
+                    subject: triple.object,
+                    predicate: "a",
+                    object: triple.objectTypePrefixed,
+                    property: false,
+                    optional: false
+                };
+
+                rdfTriple.children.push(rdfType);
+
+                select.variables.push(triple.object);
+
+                var rdf = getWhereByNode(supportV, select.where);
+
+                rdf.children.push(rdfTriple);
+
+
+                return rdfTriple.optional;
+            }
+        }
+    }
+}
+
+function getWhereByNode(v, children) {
+
+    console.log(children);
+    console.log("lokking for "  + v);
+
+    for (var i = 0; i < children.length; i++) {
+        var rdf = children[i];
+
+        if (rdf.node == v) {
+            return rdf;
+        }
+
+        if (rdf.children != undefined) {
+
+            var rdfChild = getWhereByNode(v, rdf.children);
+            if (rdfChild) {
+                return rdfChild;
+            }
+        }
+
+    }
+    return null;
+}
+
+function addNeighbouringSelectedNodesToStack(v, stack, supportingStack) {
+
+    for (var i = 0; i < graph.links.length; i++) {
+
+        var link = graph.links[i];
+
+        if (highlightedElements.paths[link.id] == 1 // selected path
+            && link.source.id == v // starting in our node
+            && link.target.type == 1 // non literal
+        ) {
+            stack.push(link.target.id);
+            supportingStack.push(v);
+        }
+
+
+
+    }
+
+}
+
+function addSelectedProperties(v, select) {
+
+    var properties = findSelectedProperties(v);
+
+    properties.forEach(property => {
+        var rdfProperty = {
+            subject: property.subject,
+            predicate: property.predicateTypePrefixed,
+            object: "?" + property.predicate,
+            optional: false,
+            property: true
+        };
+
+        if (property.cardinalityMin == 0) {
+            rdfProperty.optional = true;
+        }
+
+        select.variables.push(property.predicate);
+
+        var rdf = getWhereByNode(v, select.where);
+        rdf.children.push(rdfProperty);
+
+
+
+    });
+
+}
+
+function findSelectedProperties(v) {
+
+    var properties = [];
+
+    graph.links.forEach(link => {
+        if (highlightedElements.paths[link.id] == 1 // selected path
+            && link.source.id == v // starting in our node
+            && link.target.type == 2 // type is literal
+        )
+            properties.push(getTripleByPredicate(link.predicate));
+    });
+    return properties;
+
+}
+
+function getTripleBySubjectAndPredicate(subject, predicate) {
+    for (var i = 0; i < triples.length; i++) {
+        if (triples[i].subject == subject && triples[i].predicate == predicate) {
+            return triples[i];
+        }
+    }
+}
+
+function getTripleByPredicate(predicate) {
+    for (var i = 0; i < triples.length; i++) {
+        if (triples[i].predicate == predicate) {
+            return triples[i];
+        }
+    }
+
+}
+function getTripleBySubject(subject) {
+    for (var i = 0; i < triples.length; i++) {
+        if (triples[i].subject == subject) {
+            return triples[i];
+        }
+    }
+}
+
+function printSelectQuery(select) {
+
+    var print = "SELECT <br>";
+
+    select.variables.forEach(variable => {
+        print += "?" + variable + "<br>";
+    });
+
+    print += "WHERE {<br>";
+
+    select.where.forEach(where => {
+
+        if (where.optional) {
+
+            print += "OPTIONAL {<br>";
+
+            print += "?" + where.subject + " " + "<span class=\"choice1\">" + where.predicate + "</span>" +" " + where.object + "<br>";
+
+            for (var i = 0; i < where.children.length; i++) {
+
+                print += printChild(where.children[i], where.optional);
+
+            }
+
+            print += "}<br>";
+
+        } else {
+
+            print += "?" + where.subject + " " + where.predicate + " " + where.object + "<br>";
+
+            for (var i = 0; i < where.children.length; i++) {
+
+                print += printChild(where.children[i], where.optional);
+
+            }
+        }
+
+
+    });
+
+    print += "}";
+
+    document.getElementById("query").innerHTML = print;
+
+}
+
+function printChild(child, optional) {
+
+    var returnString = "";
+
+    if (child.property) {
+
+        if (!optional && child.optional) {
+
+            return "OPTIONAL { " + "?" + child.subject + " " + "<span class=\"choice1\">" + child.predicate + "</span>" + " " + child.object + " } <br>";
+
+        } else {
+            return "?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
+        }
+
+    } else {
+
+        if (!optional && child.optional) {
+
+            returnString += "OPTIONAL { <br> ?" + child.subject + " " + "<span class=\"choice1\">" + child.predicate + "</span>" +  " " + child.object + "<br>";
+            if (child.children != undefined) {
+                for (var i = 0; i < child.children.length; i++) {
+                    returnString += printChild(child.children[i], child.optional);
+                }
+               
+            }
+
+            returnString += " } <br>";
+
+            return returnString;
+        }
+        returnString += "?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
+
+        if (child.children != undefined) {
+            for (var i = 0; i < child.children.length; i++) {
+                returnString += printChild(child.children[i], child.optional);
+            }
+           
+        }
+        return returnString;
+    }
+
+}
+
+
+/**
+ * finds a starting node which has no incoming paths
+ * returns first starting node found
+ */
+function findStartingNode() {
+
+    for (var node in highlightedElements.nodes) {
+
+        var incoming = false;
+
+        if (highlightedElements.nodes[node] == 0) {
+            continue;
+        }
+
+        for (var path in highlightedElements.paths) {
+            var p = graph.links[path];
+
+            if (highlightedElements.paths[path] == 1 && p.target.id == node) {
+                incoming = true;
+                break;
+            }
+
+        }
+
+        if (incoming == false) {
+            // starting node
+            return parseInt(node);
+        }
+
+    }
+
+    return null;
+
 }
 
 function removeSvgElement(obj) {

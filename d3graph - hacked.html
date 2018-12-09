@@ -38,6 +38,8 @@
 
         <button onclick="switchMode('fix')">fix</button>
         <button onclick="d3.selectAll('.fixed-node').each(function(d) {d.fixed = true;})">stop</button>
+    
+        <button onclick="generateQuery()">generate query</button>
     </div>
 
     <div class="col-xs-12">&nbsp;</div>
@@ -76,6 +78,11 @@
 
     <div class="col-xs-12">
     </div>
+
+<div id="query">
+
+</div>
+
 
     <pre class="col-xs-6">
 <!--
