@@ -186,8 +186,6 @@ function checkGraph(start) {
 
     }
 
-    console.log(getNumberOfHighlightedNodes());
-    console.log(visited.length);
     if (getNumberOfHighlightedNodes() != visited.length) {
         document.getElementById("query").innerHTML = "<b style=\"color:red\">Not possible to get to all nodes from starting node!!</b>";
         return false;
@@ -401,6 +399,8 @@ function printSelectQuery(select) {
 
     var print = "SELECT <br>";
 
+    console.log(select.where);
+
     select.variables.forEach(variable => {
         print += "?" + variable + "<br>";
     });
@@ -461,7 +461,7 @@ function printChild(child, optional) {
 
         if (!optional && child.optional) {
 
-            returnString += "OPTIONAL { <br> ?" + child.subject + " " + "<span class=\"choice1\">" + child.predicate + "</span>" + " " + child.object + "<br>";
+            returnString += "OPTIONAL { <br>?" + child.subject + " " + "<span class=\"choice1\">" + child.predicate + "</span>" + " " + child.object + "<br>";
             if (child.children != undefined) {
                 for (var i = 0; i < child.children.length; i++) {
                     returnString += printChild(child.children[i], child.optional);
@@ -472,16 +472,18 @@ function printChild(child, optional) {
             returnString += " } <br>";
 
             return returnString;
-        }
-        returnString += "?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
+        } else {
+            returnString += "?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
 
-        if (child.children != undefined) {
-            for (var i = 0; i < child.children.length; i++) {
-                returnString += printChild(child.children[i], child.optional);
+            if (child.children != undefined) {
+                for (var i = 0; i < child.children.length; i++) {
+                    returnString += printChild(child.children[i], optional);
+                }
+    
             }
-
+            return returnString;
         }
-        return returnString;
+        
     }
 
 }
