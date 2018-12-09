@@ -115,15 +115,17 @@ function unhighlightNodesIfNoPath() {
 
 function generateQuery() {
     console.log(highlightedElements);
-
-    // pokud vyber netvori spojity graf
-
-    // pokud existuje mezi dvema uzly vice cest
+    console.log(triples);
 
     var start = findStartingNode();
 
     if (start == null) {
         // no starting node
+        document.getElementById("query").innerHTML = "<b style=\"color:red\">No starting node found!</b>";
+        return;
+    }
+
+    if (!checkGraph(start)) {
         return;
     }
 
@@ -135,8 +137,12 @@ function generateQuery() {
     var stack = [];
     var supportingStack = [];
 
+    var visited = [];
+
     stack.push(start);
     supportingStack.push(start);
+
+
 
     while (stack.length > 0) {
 
@@ -147,15 +153,74 @@ function generateQuery() {
 
         addSelectedProperties(v, select);
 
+        visited.push(v);
+
         addNeighbouringSelectedNodesToStack(v, stack, supportingStack);
 
     }
 
-    console.log(triples);
-
     printSelectQuery(select);
 
 }
+
+function checkGraph(start) {
+
+    var stack = [];
+    var supportingStack = [];
+    var visited = [];
+
+    stack.push(start);
+
+    while (stack.length > 0) {
+
+        var v = stack.pop();
+
+        if (visited.includes(v)) {
+            document.getElementById("query").innerHTML = "<b style=\"color:red\">There are more ways to one node!</b>";
+            return false;
+        }
+
+        visited.push(v);
+
+        addNeighbouringSelectedNodesToStack(v, stack, supportingStack);
+
+    }
+
+    console.log(getNumberOfHighlightedNodes());
+    console.log(visited.length);
+    if (getNumberOfHighlightedNodes() != visited.length) {
+        document.getElementById("query").innerHTML = "<b style=\"color:red\">Not possible to get to all nodes from starting node!!</b>";
+        return false;
+    }
+
+    return true;
+
+}
+
+function getNumberOfHighlightedNodes() {
+
+    var i = 0;
+
+    for (var node in highlightedElements.nodes) {
+
+        if (highlightedElements.nodes[node] == 0) {
+            continue;
+        }
+
+        var n = graph.nodes[node];
+
+        if (n.type == 1) {
+            i++;
+        }
+
+
+    }
+
+    return i;
+
+
+}
+
 
 function addSelectedPathToNode(v, supportV, select) {
 
@@ -225,9 +290,6 @@ function addSelectedPathToNode(v, supportV, select) {
 }
 
 function getWhereByNode(v, children) {
-
-    console.log(children);
-    console.log("lokking for "  + v);
 
     for (var i = 0; i < children.length; i++) {
         var rdf = children[i];
@@ -351,7 +413,7 @@ function printSelectQuery(select) {
 
             print += "OPTIONAL {<br>";
 
-            print += "?" + where.subject + " " + "<span class=\"choice1\">" + where.predicate + "</span>" +" " + where.object + "<br>";
+            print += "?" + where.subject + " " + "<span class=\"choice1\">" + where.predicate + "</span>" + " " + where.object + "<br>";
 
             for (var i = 0; i < where.children.length; i++) {
 
@@ -399,12 +461,12 @@ function printChild(child, optional) {
 
         if (!optional && child.optional) {
 
-            returnString += "OPTIONAL { <br> ?" + child.subject + " " + "<span class=\"choice1\">" + child.predicate + "</span>" +  " " + child.object + "<br>";
+            returnString += "OPTIONAL { <br> ?" + child.subject + " " + "<span class=\"choice1\">" + child.predicate + "</span>" + " " + child.object + "<br>";
             if (child.children != undefined) {
                 for (var i = 0; i < child.children.length; i++) {
                     returnString += printChild(child.children[i], child.optional);
                 }
-               
+
             }
 
             returnString += " } <br>";
@@ -417,7 +479,7 @@ function printChild(child, optional) {
             for (var i = 0; i < child.children.length; i++) {
                 returnString += printChild(child.children[i], child.optional);
             }
-           
+
         }
         return returnString;
     }
