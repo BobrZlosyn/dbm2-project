@@ -10,6 +10,7 @@ function clickedElement() {
         //
     } else if (selectedMode == 'b') {
         showInfo(this);
+        removeClickableNode();
     } else if (selectedMode == 'c') {
         highlight(this);
     } else if (selectedMode == 'd') {
@@ -26,6 +27,8 @@ function clickedElement() {
         );
     }
 }
+
+
 
 function showInfo(obj) {
 

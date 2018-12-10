@@ -24,13 +24,9 @@ var check_value;
 
 
 var parentElement;
-var enableClickableNodes;
-var enableClickablePaths;
+
 
 $(document).ready(function() {
-  enableClickableNodes = false;
-  enableClickablePaths = true;
-
   highlightedElements = { nodes: {}, paths: {} };
 
   //prepare data
@@ -125,8 +121,8 @@ function applyStyle() {
         return color(d.type);
     });
 
-    clickableNodes(enableClickableNodes);
-    clickablePaths(enableClickablePaths);
+    handleClickableNode(true);
+    handleClickablePaths(true);
     
     nodes.call(force.drag);
     paths.call(force.drag);
@@ -136,15 +132,21 @@ function applyStyle() {
 
 }
 
-function clickableNodes (isEnable) {
-  if (isEnable) {
+function handleClickableNode(remove) {
+  if (remove) {
+    nodes.on('click', null);
+    nodeTexts.on('click', null);
+  }else {
     nodes.on('click', clickedElement);
     nodeTexts.on('click', clickedElement);
   }
 }
 
-function clickablePaths (isEnable) {
-  if (isEnable) {
+function handleClickablePaths(remove) {
+  if (remove) {
+    paths.on('click', null);
+    pathTexts.on('click', null);
+  }else {
     paths.on('click', clickedElement);
     pathTexts.on('click', clickedElement);
   }
