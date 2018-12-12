@@ -260,7 +260,7 @@ function addSelectedPathToNode(v, supportV) {
                     node: v,
                     subject: triple.subject,
                     predicate: triple.predicateTypePrefixed,
-                    object: triple.object,
+                    object: "?" + triple.object,
                     property: false,
                     optional: false,
                     id: tripleID++,
@@ -271,7 +271,7 @@ function addSelectedPathToNode(v, supportV) {
                     rdfTriple.optional = true;
                     rdfTriple.switched = 0;
                 }
- 
+
                 var rdfType = {
                     subject: triple.object,
                     predicate: "a",
@@ -369,7 +369,7 @@ function addSelectedProperties(v) {
         var rdfProperty = {
             subject: property.subject,
             predicate: property.predicateTypePrefixed,
-            object: property.predicate,
+            object: "?" + property.predicate,
             optional: false,
             property: true,
             id: tripleID++,
@@ -511,7 +511,7 @@ function printSelectQuery() {
 
     select.where.forEach(where => {
 
-        print += " ?" + where.subject + " " + where.predicate + " " + where.object + "<br>";
+        print += printRDFTriple(where);
 
         for (var i = 0; i < where.children.length; i++) {
 
@@ -532,6 +532,19 @@ function printSelectQuery() {
 
 }
 
+function printRDFTriple(child) {
+    return " ?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
+}
+
+function printRDFTripleOptional(child, wrapped) {
+    if (wrapped) {
+        return " OPTIONAL { " + "?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + " } <br>";
+    } else {
+        return " ?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + "<br>";
+    }
+
+
+}
 
 function printChild(child, optional) {
 
@@ -542,14 +555,14 @@ function printChild(child, optional) {
         if (!optional && child.optional) {
 
             if (child.switched == 0) {
-                return " OPTIONAL { " + "?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + " } <br>";
+                return printRDFTripleOptional(child, true);
             } else {
-                return " ?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + "<br>";
+                return printRDFTripleOptional(child, false);
             }
 
 
         } else {
-            return " ?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
+            return printRDFTriple(child);
         }
 
     } else {
@@ -557,7 +570,8 @@ function printChild(child, optional) {
         if (!optional && child.optional) {
 
             if (child.switched == 0) {
-                returnString += " OPTIONAL { <br> ?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover'>" + child.predicate + "</span>" + " " + child.object + "<br>";
+                returnString += printRDFTripleOptional(child, true);
+
                 if (child.children != undefined) {
                     for (var i = 0; i < child.children.length; i++) {
                         returnString += printChild(child.children[i], child.optional);
@@ -569,7 +583,7 @@ function printChild(child, optional) {
 
                 return returnString;
             } else {
-                returnString += " ?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover'>" + child.predicate + "</span>" + " " + child.object + "<br>";
+                returnString += printRDFTripleOptional(child, false);
 
                 if (child.children != undefined) {
                     for (var i = 0; i < child.children.length; i++) {
@@ -581,8 +595,7 @@ function printChild(child, optional) {
             }
 
         } else {
-            returnString += " ?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
-
+            returnString += printRDFTriple(child);
             if (child.children != undefined) {
                 for (var i = 0; i < child.children.length; i++) {
                     returnString += printChild(child.children[i], optional);
