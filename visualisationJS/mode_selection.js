@@ -115,8 +115,7 @@ function unhighlightNodesIfNoPath() {
 
 var select = {
     variables: [],
-    where: [],
-    groupBy: []
+    where: []
 };
 
 var tripleID = 0;
@@ -235,8 +234,13 @@ function addSelectedPathToNode(v, supportV) {
             children: []
         };
 
-        select.variables.push(triple.subject);
-        select.groupBy.push(triple.subject);
+        var variable = {
+            name: triple.subject
+        };
+
+        if (!select.variables.includes(variable)) {
+            select.variables.push(variable);
+        }
 
         select.where.push(rdfType);
 
@@ -267,10 +271,20 @@ function addSelectedPathToNode(v, supportV) {
                     children: []
                 };
 
+                var variable = {
+                    name: triple.object
+                };
+
                 if (triple.cardinalityMin == 0) {
                     rdfTriple.optional = true;
                     rdfTriple.switched = 0;
                 }
+
+                if (triple.cardinalityMax != 1) {
+                    variable.agregate = true;
+                    variable.switched = 0;
+                }
+
 
                 var rdfType = {
                     subject: triple.object,
@@ -283,8 +297,9 @@ function addSelectedPathToNode(v, supportV) {
 
                 rdfTriple.children.push(rdfType);
 
-                select.variables.push(triple.object);
-                select.groupBy.push(triple.object);
+                if (!select.variables.includes(variable)) {
+                    select.variables.push(variable);
+                }
 
                 var rdf = getWhereByNode(supportV, select.where);
 
@@ -375,13 +390,24 @@ function addSelectedProperties(v) {
             id: tripleID++,
         };
 
+        var variable = {
+            name: property.predicate
+        };
+
         if (property.cardinalityMin == 0) {
             rdfProperty.optional = true;
             rdfProperty.switched = 0;
         }
 
-        select.variables.push(property.predicate);
-        select.groupBy.push(property.predicate);
+        if (property.cardinalityMax != 1) {
+            variable.agregate = true;
+            variable.switched = 0;
+
+        }
+
+        if (!select.variables.includes(variable)) {
+            select.variables.push(variable);
+        }
 
         var rdf = getWhereByNode(v, select.where);
         rdf.children.push(rdfProperty);
@@ -438,7 +464,75 @@ function getTripleBySubject(subject) {
     }
 }
 
+function createPopUpWindowAgregate(i, switched) {
+
+    var variable = select.variables[i];
+
+    var variableName = variable.name;
+
+    var title = "<strong>" + variableName + "</strong> - max. cardinality != 1";
+
+    var firstChecked = switched == 0 ? true : false;
+
+    if (firstChecked) {
+        var content = "<div class='radio'><label><input type='radio' id='" + variableName + "' name='agregateRadio' checked='checked' value='" + variableName + "&0'>Agregate <strong>" + variableName + "</strong> variable.</label></div><div class='radio'><label><input type='radio' name='agregateRadio' value='" + variableName + "&1'>Group <strong>" + variableName + "</strong> variable.</label></div>";
+    } else {
+        var content = "<div class='radio'><label><input type='radio' id='" + variableName + "'name='agregateRadio' value='" + variableName + "&0'>Agregate <strong>" + variableName + "</strong> variable.</label></div><div class='radio'><label><input type='radio' name='agregateRadio' checked='checked' value='" + variableName + "&1'>Group <strong>" + variableName + "</strong> variable.</label></div>";
+    }
+
+    $('[data-toggle="popover"]').popover("hide");
+
+    $("#" + variableName).popover({
+        title: title,
+        content: content,
+        html: true,
+        placement: "right"
+    });
+
+    $("#" + variableName).popover('show');
+
+    $("input[type='radio']").click(function () {
+        var radioValue = $("input[name='agregateRadio']:checked").val();
+        if (radioValue) {
+            radioAgregate(radioValue);
+        }
+    });
+
+}
+
+function radioAgregate(radioValue) {
+
+    var splitted = radioValue.split("&");
+    var variableName = splitted[0];
+    var radio = splitted[1];
+
+    var variable = getVariableByName(variableName);
+
+    if (variable.switched == radio) {
+        return;
+    }
+
+    variable.switched = radio;
+
+    printSelectQuery();
+
+}
+
+function getVariableByName(variableName) {
+
+    for (var i = 0; i < select.variables.length; i++) {
+        if (select.variables[i].name == variableName) {
+            return select.variables[i];
+        }
+    }
+
+}
+
+
+
 function createPopUpWindowCardinality(id, switched) {
+
+    console.log(id);
 
     var rdf = getWhereById(id, select.where);
 
@@ -452,9 +546,9 @@ function createPopUpWindowCardinality(id, switched) {
     var firstChecked = switched == 0 ? true : false;
 
     if (firstChecked) {
-        var content = "<div class='radio'><label><input type='radio' name='cardinalRadio' checked='checked' value='" + id + "&0'>Select every <strong>" + rdf.subject + "</strong>, regardless of the property.</label></div><div class='radio'><label><input type='radio' name='cardinalRadio' value='" + id + "&1'>Select only <strong>" + rdf.subject + "</strong>s that are linked to some <strong>" + object + "</strong>.</label></div>";
+        var content = "<div class='radio'><label><input type='radio' name='cardinalRadio' checked='checked' value='" + id + "&0'>Select every <strong>" + rdf.subject + "</strong>, regardless of the property.</label></div><div class='radio'><label><input type='radio' name='cardinalRadio' value='" + id + "&1'>Select only <strong>" + rdf.subject + "</strong> that are linked to some <strong>" + object + "</strong>.</label></div>";
     } else {
-        var content = "<div class='radio'><label><input type='radio' name='cardinalRadio' value='" + id + "&0'>Select every <strong>" + rdf.subject + "</strong>, regardless of the property.</label></div><div class='radio'><label><input type='radio' name='cardinalRadio' checked='checked' value='" + id + "&1'>Select only <strong>" + rdf.subject + "</strong>s that are linked to some <strong>" + object + "</strong>.</label></div>";
+        var content = "<div class='radio'><label><input type='radio' name='cardinalRadio' value='" + id + "&0'>Select every <strong>" + rdf.subject + "</strong>, regardless of the property.</label></div><div class='radio'><label><input type='radio' name='cardinalRadio' checked='checked' value='" + id + "&1'>Select only <strong>" + rdf.subject + "</strong> that are linked to some <strong>" + object + "</strong>.</label></div>";
     }
 
 
@@ -497,19 +591,39 @@ function radioCardinality(radioValue) {
 
 }
 
+
+
 function printSelectQuery() {
 
     var print = "SELECT <br>";
 
     console.log(select);
 
-    select.variables.forEach(variable => {
-        print += " ?" + variable + "<br>";
-    });
+    for (var i = 0; i < select.variables.length; i++) {
+
+        var variable = select.variables[i];
+
+        if (variable.agregate) {
+
+            if (variable.switched == 0) {
+
+                print += " (count(<span class='choice' id='" + variable.name + "' onClick='createPopUpWindowAgregate(" + i + ", " + variable.switched + ")\' data-toggle='popover'>" + "?" + variable.name + ")</span> as ?count" + variable.name + ")<br>";
+
+            } else {
+                print += " ?" + variable.name + "<br>";
+            }
+
+
+        } else {
+            print += " ?" + variable.name + "<br>";
+        }
+
+    }
 
     print += "WHERE {<br>";
 
-    select.where.forEach(where => {
+    for (var i = 0; i < select.where.length; i++) {
+        var where = select.where[i];
 
         print += printRDFTriple(where);
 
@@ -518,29 +632,45 @@ function printSelectQuery() {
             print += printChild(where.children[i], where.optional);
 
         }
-    });
+    }
 
     print += "} <br>";
 
     print += "GROUP BY ";
 
-    select.groupBy.forEach(variable => {
-        print += "?" + variable + " ";
-    });
+    for (var i = 0; i < select.variables.length; i++) {
+
+        var variable = select.variables[i];
+
+        if (variable.agregate) {
+            if (variable.switched == 1) {
+                print += "<span class='choice' id='" + variable.name + "' onClick='createPopUpWindowAgregate(" + i + ", " + variable.switched + ")' data-toggle='popover'>" + "?" + variable.name + "</span>" + " ";
+
+            } else if (variable.switched == 0) {
+                // nothing
+            } else {
+                print += "?" + variable.name + " ";
+            }
+
+        } else {
+            print += "?" + variable.name + " ";
+        }
+
+    }
 
     document.getElementById("query").innerHTML = print;
 
 }
 
 function printRDFTriple(child) {
-    return " ?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
+    return " ?" + child.subject + " " + child.predicate + " " + child.object + " .<br>";
 }
 
 function printRDFTripleOptional(child, wrapped) {
     if (wrapped) {
-        return " OPTIONAL { " + "?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + " } <br>";
+        return " OPTIONAL { " + "?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + " . } <br>";
     } else {
-        return " ?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + "<br>";
+        return " ?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + " .<br>";
     }
 
 
@@ -570,7 +700,9 @@ function printChild(child, optional) {
         if (!optional && child.optional) {
 
             if (child.switched == 0) {
-                returnString += printRDFTripleOptional(child, true);
+
+                returnString += "OPTIONAL { <br>";
+                returnString += printRDFTripleOptional(child, false);
 
                 if (child.children != undefined) {
                     for (var i = 0; i < child.children.length; i++) {
