@@ -113,6 +113,14 @@ function unhighlightNodesIfNoPath() {
 
 }
 
+var select = {
+    variables: [],
+    where: [],
+    groupBy: []
+};
+
+var tripleID = 0;
+
 function generateQuery() {
     console.log(highlightedElements);
     console.log(triples);
@@ -121,7 +129,7 @@ function generateQuery() {
 
     if (start == null) {
         // no starting node
-        document.getElementById("query").innerHTML = "<b style=\"color:red\">No starting node found!</b>";
+        document.getElementById("query").innerHTML = "<p class='error'>No starting node found!</p>";
         return;
     }
 
@@ -129,37 +137,31 @@ function generateQuery() {
         return;
     }
 
-    var select = {
-        variables: [],
-        where: [],
-    }
+    select.variables = [];
+    select.where = [];
+
+    tripleID = 0;
 
     var stack = [];
     var supportingStack = [];
 
-    var visited = [];
-
     stack.push(start);
     supportingStack.push(start);
-
-
 
     while (stack.length > 0) {
 
         var v = stack.pop();
         var supportV = supportingStack.pop();
 
-        addSelectedPathToNode(v, supportV, select);
+        addSelectedPathToNode(v, supportV);
 
-        addSelectedProperties(v, select);
-
-        visited.push(v);
+        addSelectedProperties(v);
 
         addNeighbouringSelectedNodesToStack(v, stack, supportingStack);
 
     }
 
-    printSelectQuery(select);
+    printSelectQuery();
 
 }
 
@@ -176,7 +178,7 @@ function checkGraph(start) {
         var v = stack.pop();
 
         if (visited.includes(v)) {
-            document.getElementById("query").innerHTML = "<b style=\"color:red\">There are more ways to one node!</b>";
+            document.getElementById("query").innerHTML = "<p class='error'>There are more ways to one node!</p>";
             return false;
         }
 
@@ -187,7 +189,7 @@ function checkGraph(start) {
     }
 
     if (getNumberOfHighlightedNodes() != visited.length) {
-        document.getElementById("query").innerHTML = "<b style=\"color:red\">Not possible to get to all nodes from starting node!!</b>";
+        document.getElementById("query").innerHTML = "<p class='error'>Not possible to get to all nodes from starting node!!</p>";
         return false;
     }
 
@@ -211,16 +213,14 @@ function getNumberOfHighlightedNodes() {
             i++;
         }
 
-
     }
 
     return i;
 
-
 }
 
 
-function addSelectedPathToNode(v, supportV, select) {
+function addSelectedPathToNode(v, supportV) {
 
     if (v == supportV) {
         var triple = getTripleBySubject(graph.nodes[v].label);
@@ -231,21 +231,27 @@ function addSelectedPathToNode(v, supportV, select) {
             predicate: "a",
             object: triple.subjectTypePrefixed,
             property: false,
+            id: tripleID++,
             children: []
         };
 
         select.variables.push(triple.subject);
+        select.groupBy.push(triple.subject);
 
         select.where.push(rdfType);
 
         return rdfType.optional;
     }
     else {
-        for (var i = 0; i < graph.links.length; i++) {
-            var link = graph.links[i];
 
-            if (highlightedElements.paths[link.id] == 1 // selected path
-                && link.source.id == supportV // from last visited
+        for (var path in highlightedElements.paths) {
+            if (highlightedElements.paths[path] == 0) {
+                continue;
+            }
+
+            var link = graph.links[path];
+
+            if (link.source.id == supportV // from last visited
                 && link.target.id == v // to our node
             ) {
                 var triple = getTripleBySubjectAndPredicate(link.source.label, link.predicate);
@@ -254,27 +260,31 @@ function addSelectedPathToNode(v, supportV, select) {
                     node: v,
                     subject: triple.subject,
                     predicate: triple.predicateTypePrefixed,
-                    object: "?" + triple.object,
+                    object: triple.object,
                     property: false,
                     optional: false,
+                    id: tripleID++,
                     children: []
                 };
 
                 if (triple.cardinalityMin == 0) {
                     rdfTriple.optional = true;
+                    rdfTriple.switched = 0;
                 }
-
+ 
                 var rdfType = {
                     subject: triple.object,
                     predicate: "a",
                     object: triple.objectTypePrefixed,
                     property: false,
-                    optional: false
+                    optional: false,
+                    id: tripleID++
                 };
 
                 rdfTriple.children.push(rdfType);
 
                 select.variables.push(triple.object);
+                select.groupBy.push(triple.object);
 
                 var rdf = getWhereByNode(supportV, select.where);
 
@@ -305,30 +315,53 @@ function getWhereByNode(v, children) {
         }
 
     }
+
+    return null;
+}
+
+function getWhereById(id, children) {
+
+    for (var i = 0; i < children.length; i++) {
+        var rdf = children[i];
+
+        if (rdf.id == id) {
+            return rdf;
+        }
+
+        if (rdf.children != undefined) {
+
+            var rdfChild = getWhereById(id, rdf.children);
+            if (rdfChild) {
+                return rdfChild;
+            }
+        }
+
+    }
+
     return null;
 }
 
 function addNeighbouringSelectedNodesToStack(v, stack, supportingStack) {
 
-    for (var i = 0; i < graph.links.length; i++) {
+    for (var path in highlightedElements.paths) {
 
-        var link = graph.links[i];
+        if (highlightedElements.paths[path] == 0) {
+            continue;
+        }
 
-        if (highlightedElements.paths[link.id] == 1 // selected path
-            && link.source.id == v // starting in our node
+        var link = graph.links[path];
+
+        if (link.source.id == v // starting in our node
             && link.target.type == 1 // non literal
         ) {
             stack.push(link.target.id);
             supportingStack.push(v);
         }
 
-
-
     }
-
 }
 
-function addSelectedProperties(v, select) {
+function addSelectedProperties(v) {
 
     var properties = findSelectedProperties(v);
 
@@ -336,22 +369,22 @@ function addSelectedProperties(v, select) {
         var rdfProperty = {
             subject: property.subject,
             predicate: property.predicateTypePrefixed,
-            object: "?" + property.predicate,
+            object: property.predicate,
             optional: false,
-            property: true
+            property: true,
+            id: tripleID++,
         };
 
         if (property.cardinalityMin == 0) {
             rdfProperty.optional = true;
+            rdfProperty.switched = 0;
         }
 
         select.variables.push(property.predicate);
+        select.groupBy.push(property.predicate);
 
         var rdf = getWhereByNode(v, select.where);
         rdf.children.push(rdfProperty);
-
-
-
     });
 
 }
@@ -360,13 +393,22 @@ function findSelectedProperties(v) {
 
     var properties = [];
 
-    graph.links.forEach(link => {
-        if (highlightedElements.paths[link.id] == 1 // selected path
-            && link.source.id == v // starting in our node
+    for (var path in highlightedElements.paths) {
+        if (highlightedElements.paths[path] == 0) {
+            continue;
+        }
+
+        var link = graph.links[path];
+
+        if (link.source.id == v // starting in our node
             && link.target.type == 2 // type is literal
-        )
+        ) {
             properties.push(getTripleByPredicate(link.predicate));
-    });
+        }
+
+
+    }
+
     return properties;
 
 }
@@ -387,6 +429,7 @@ function getTripleByPredicate(predicate) {
     }
 
 }
+
 function getTripleBySubject(subject) {
     for (var i = 0; i < triples.length; i++) {
         if (triples[i].subject == subject) {
@@ -395,53 +438,100 @@ function getTripleBySubject(subject) {
     }
 }
 
-function printSelectQuery(select) {
+function createPopUpWindowCardinality(id, switched) {
+
+    var rdf = getWhereById(id, select.where);
+
+    var object = rdf.object;
+    if (object.includes("?")) {
+        object = object.replace("?", "");
+    }
+
+    var title = "<strong>" + rdf.predicate + "</strong> - min. cardinality 0";
+
+    var firstChecked = switched == 0 ? true : false;
+
+    if (firstChecked) {
+        var content = "<div class='radio'><label><input type='radio' name='cardinalRadio' checked='checked' value='" + id + "&0'>Select every <strong>" + rdf.subject + "</strong>, regardless of the property.</label></div><div class='radio'><label><input type='radio' name='cardinalRadio' value='" + id + "&1'>Select only <strong>" + rdf.subject + "</strong>s that are linked to some <strong>" + object + "</strong>.</label></div>";
+    } else {
+        var content = "<div class='radio'><label><input type='radio' name='cardinalRadio' value='" + id + "&0'>Select every <strong>" + rdf.subject + "</strong>, regardless of the property.</label></div><div class='radio'><label><input type='radio' name='cardinalRadio' checked='checked' value='" + id + "&1'>Select only <strong>" + rdf.subject + "</strong>s that are linked to some <strong>" + object + "</strong>.</label></div>";
+    }
+
+
+    $('[data-toggle="popover"]').popover("hide");
+
+    $("#" + id).popover({
+        title: title,
+        content: content,
+        html: true,
+        placement: "right"
+    });
+
+    $("#" + id).popover('show');
+
+    $("input[type='radio']").click(function () {
+        var radioValue = $("input[name='cardinalRadio']:checked").val();
+        if (radioValue) {
+            radioCardinality(radioValue);
+        }
+    });
+
+
+}
+
+function radioCardinality(radioValue) {
+
+    var splitted = radioValue.split("&");
+    var id = splitted[0];
+    var radio = splitted[1];
+
+    var rdf = getWhereById(id, select.where);
+
+    if (rdf.switched == radio) {
+        return;
+    }
+
+    rdf.switched = radio;
+
+    printSelectQuery();
+
+}
+
+function printSelectQuery() {
 
     var print = "SELECT <br>";
 
-    console.log(select.where);
+    console.log(select);
 
     select.variables.forEach(variable => {
-        print += "?" + variable + "<br>";
+        print += " ?" + variable + "<br>";
     });
 
     print += "WHERE {<br>";
 
     select.where.forEach(where => {
 
-        if (where.optional) {
+        print += " ?" + where.subject + " " + where.predicate + " " + where.object + "<br>";
 
-            print += "OPTIONAL {<br>";
+        for (var i = 0; i < where.children.length; i++) {
 
-            print += "?" + where.subject + " " + "<span class=\"choice1\">" + where.predicate + "</span>" + " " + where.object + "<br>";
+            print += printChild(where.children[i], where.optional);
 
-            for (var i = 0; i < where.children.length; i++) {
-
-                print += printChild(where.children[i], where.optional);
-
-            }
-
-            print += "}<br>";
-
-        } else {
-
-            print += "?" + where.subject + " " + where.predicate + " " + where.object + "<br>";
-
-            for (var i = 0; i < where.children.length; i++) {
-
-                print += printChild(where.children[i], where.optional);
-
-            }
         }
-
-
     });
 
-    print += "}";
+    print += "} <br>";
+
+    print += "GROUP BY ";
+
+    select.groupBy.forEach(variable => {
+        print += "?" + variable + " ";
+    });
 
     document.getElementById("query").innerHTML = print;
 
 }
+
 
 function printChild(child, optional) {
 
@@ -451,39 +541,57 @@ function printChild(child, optional) {
 
         if (!optional && child.optional) {
 
-            return "OPTIONAL { " + "?" + child.subject + " " + "<span class=\"choice1\">" + child.predicate + "</span>" + " " + child.object + " } <br>";
+            if (child.switched == 0) {
+                return " OPTIONAL { " + "?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + " } <br>";
+            } else {
+                return " ?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + "<br>";
+            }
+
 
         } else {
-            return "?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
+            return " ?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
         }
 
     } else {
 
         if (!optional && child.optional) {
 
-            returnString += "OPTIONAL { <br>?" + child.subject + " " + "<span class=\"choice1\">" + child.predicate + "</span>" + " " + child.object + "<br>";
-            if (child.children != undefined) {
-                for (var i = 0; i < child.children.length; i++) {
-                    returnString += printChild(child.children[i], child.optional);
+            if (child.switched == 0) {
+                returnString += " OPTIONAL { <br> ?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover'>" + child.predicate + "</span>" + " " + child.object + "<br>";
+                if (child.children != undefined) {
+                    for (var i = 0; i < child.children.length; i++) {
+                        returnString += printChild(child.children[i], child.optional);
+                    }
+
                 }
 
+                returnString += " } <br>";
+
+                return returnString;
+            } else {
+                returnString += " ?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover'>" + child.predicate + "</span>" + " " + child.object + "<br>";
+
+                if (child.children != undefined) {
+                    for (var i = 0; i < child.children.length; i++) {
+                        returnString += printChild(child.children[i], optional);
+                    }
+
+                }
+                return returnString;
             }
 
-            returnString += " } <br>";
-
-            return returnString;
         } else {
-            returnString += "?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
+            returnString += " ?" + child.subject + " " + child.predicate + " " + child.object + "<br>";
 
             if (child.children != undefined) {
                 for (var i = 0; i < child.children.length; i++) {
                     returnString += printChild(child.children[i], optional);
                 }
-    
+
             }
             return returnString;
         }
-        
+
     }
 
 }

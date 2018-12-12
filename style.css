@@ -14,7 +14,7 @@ body {
 	stroke-width: 1px;
 }
 
-.choice1 {
+.choice {
 	background-color: coral;
 }
 
@@ -77,4 +77,8 @@ svg {
 
 .checkbox>.children {
 	cursor: pointer;
+}
+
+.error {
+	color: #900
 }
