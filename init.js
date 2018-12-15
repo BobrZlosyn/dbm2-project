@@ -131,8 +131,6 @@ function removePath(checkboxId) {
          for (var i = 0; i < graph.nodes.length; i++) {
               nodeLabel = graph.nodes[i].label;
               if (nodeLabel == labelBox) {
-                gr.nodes = graph.nodes;
-                gr.links = graph.links;
                 removeSvgElement(graph.nodes[i]);
                 return;
               }
