@@ -24,16 +24,19 @@ Pokud zruším označení hrany a tím by zbyl izolovaný uzel na jednom z konc�
 D:
 Občas se špatně přečíslovali někde indexy a pak např. mode B zobrazoval údaje pro jinou hranu, než které byla nakliknuta. Nepovedlo se mi to teď reprodukovat tak jsem to možná už fixnul.
 Volbu aplikovat i do filtračního seznamu.
+ - hotovo (pravděpodobně - nenalezná daná chyba)
 
 Přidat mode E. Po kliknutí na uzel se zobrazí/skryjí datatype vlastnosti vázané na daný uzel. Pokud je mezi uzly více hran stejné orientace, v tomto módu lze přepínat mezi zobrazením všech a sjednocením těchto hran do jedné pseudo-vlastnosti (hrany) s textovým popiskem "<< X >>", kde X je počet sloučených vlastností.
 - hotovo
 
 Hrany se stejnou orientací mezi stejnými uzly upravit tak, aby se nepřekrývali. - hotovo
 
-Classes filter předělat na dynamické přidávání/odebírání elementů (něco jako D), nedělat kompletní reload simlulace, aby se uživatel neztratil.
+Classes filter předělat na dynamické přidávání/odebírání elementů (něco jako D), nedělat kompletní reload simlulace, aby se uživatel neztratil. - hotovo
 
-Přidat indikaci (asi přes css) locked statusu na uzlu a existence datatype properties k rozkliknutí (mode E)
+Přidat indikaci (asi přes css) locked statusu na uzlu a existence datatype properties k rozkliknutí (mode E) - uzel zatím nemá co zobrazovat
 
+
+----- jiné zadání ------
 Dotaz je pouze jako mockup. Generovat dle aktivní selekce (mode C), nástřel algoritmu:
 * Najít vstupní uzel grafu (má pouze odchozí hrany)
 * Uvést rdf:type trojici pro uzel.
@@ -46,6 +49,6 @@ Pro maxCardinality!=1 umožnit GROUPBY agregaci, tj. proměnná je buď obalena 
 Zobrazit warning symbol + tooltip pro 2 divné stavy:
 * pokud výběr netvoří spojitý graf
 * pokud je mezi 2 uzly vybráno více cest
-
+-------------------------
 
 vyhodit JS bokem do souboru, aby to nebylo přímo v html? - hotovo
