@@ -9,12 +9,13 @@ function clickedElement() {
     if (selectedMode == 'a') {
         //
     } else if (selectedMode == 'b') {
+      if ($(this).prop("tagName") != "circle") {
         showInfo(this);
-        removeClickableNode();
+      }
     } else if (selectedMode == 'c') {
         highlight(this);
     } else if (selectedMode == 'd') {
-        removeSvgElement(this);
+        prepareToRemoveSvgElement(this);
     } else if (selectedMode == 'e') {
         connectedNodes(this);
     } else if (selectedMode == 'fix') {
@@ -27,8 +28,6 @@ function clickedElement() {
         );
     }
 }
-
-
 
 function showInfo(obj) {
 
@@ -88,11 +87,15 @@ function highlight(obj) {
     });
 }
 
-function removeSvgElement(obj) {
-    d = obj.__data__;
+function prepareToRemoveSvgElement(obj) {
+  d = obj.__data__;
 
+  if (obj.classList.contains('node')) {
+    removeSvgElement(d);
+  }
+}
 
-    if (obj.classList.contains('node')) {
+function removeSvgElement(d) {
         graph.nodes.splice(d.index, 1);
         graph.links = graph.links.filter(function (el) { return el.source.id != d.id && el.target.id != d.id; });
 
@@ -158,9 +161,6 @@ function removeSvgElement(obj) {
         applyStyle();
 
         console.log(graph);
-
-
-    }
 }
 
 function connectedNodes(obj) {
