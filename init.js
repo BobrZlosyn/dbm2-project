@@ -25,10 +25,8 @@ var check_value;
 
 var parentElement;
 
-
 $(document).ready(function() {
   highlightedElements = { nodes: {}, paths: {} };
-
   //prepare data
   triples = INPUT_DATA.Triples;
   console.log(triples);
@@ -80,7 +78,8 @@ function createClassCheckboxes() {
       newCheckBox.value = check_value[count];
       newCheckBox.checked = true;
 
-      newCheckBox.setAttribute("onclick", "var array = checkCheckboxes(); graph = triplesToGraph(triples, array); update(); calculateNeighborhoodMatrix(); applyStyle();");
+
+      newCheckBox.setAttribute("onclick", "removePath('" + newCheckBox.id + "')");
       newCheckBox.setAttribute("style", "display: inline-block");
 
       var label = document.createElement('label');
@@ -95,6 +94,39 @@ function createClassCheckboxes() {
   }
 }
 
+function removePath(checkboxId) {
+
+    console.log($("#" + checkboxId).is(":checked"));
+      if($("#" + checkboxId).is(":checked")) {
+         var array = checkCheckboxes();
+         graph = triplesToGraph(triples, array);
+         update();
+         calculateNeighborhoodMatrix();
+         applyStyle();
+
+      } else {
+
+         var info = $("#" + checkboxId).val().split(":");
+         var labelBox;
+         if (info.length > 1) {
+           labelBox = info[1];
+         }else {
+           labelBox = info[0];
+         }
+
+         for (var i = 0; i < graph.nodes.length; i++) {
+              nodeLabel = graph.nodes[i].label;
+              if (nodeLabel == labelBox) {
+                removeSvgElement(graph.nodes[i]);
+                return;
+              }
+          }
+        }
+
+
+}
+
+
 function applyStyle() {
 
     var color = d3.scale.category20();
@@ -107,13 +139,13 @@ function applyStyle() {
         return color(d.type);
     });
 
-    nodes.on('click', clickedElement);
     nodes.call(force.drag);
-    paths.on('click', clickedElement);
     paths.call(force.drag);
+    nodes.on('click', clickedElement);
     nodeTexts.on('click', clickedElement);
-    nodeTexts.call(force.drag);
+    paths.on('click', clickedElement);
     pathTexts.on('click', clickedElement);
+    nodeTexts.call(force.drag);
     pathTexts.call(force.drag);
 
 }

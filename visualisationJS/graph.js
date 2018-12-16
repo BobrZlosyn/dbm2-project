@@ -35,7 +35,6 @@ function triplesToGraph(triples, filterArray) {
 
 
             var objNode = filterNodesByLabel(graph.nodes, objId)[0];
-
             if (objNode == null) {
                 if (objType == 'Literal') {
                     objNode = { id: idNode++, label: '', type: 2 };
