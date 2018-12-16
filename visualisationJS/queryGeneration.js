@@ -17,7 +17,7 @@ function generateQuery() {
     var start = findStartingNode();
 
     if (start == null) {
-        // no starting node - can nnot generate query
+        // no starting node - can not generate query
         document.getElementById("query").innerHTML = "<p class='error'>No starting node found!</p>";
         return;
     }
@@ -34,10 +34,10 @@ function generateQuery() {
     // get id of triples to base zero
     tripleID = 0;
 
-    // initialiuze stacks - why we need support stack ? we save there where we have been last. Example:
+    // initialize stacks - why we need support stack ? we save there where we have been last. Example:
     // we are in Study
     // next iteration we are in Series
-    // since supportStack whosh latest destination (Study) we can easily find the path which we took there
+    // since supportStack contains latest destination (Study) we can easily find the path which we took there
     var stack = [];
     var supportingStack = [];
 
@@ -472,17 +472,16 @@ function getWhereById(id, children) {
 }
 
 /**
- * function creates a popover window over <span> choice element of AGREGATE. Function needs variable index to get which variable was clicked by user. Switched is the current 
- * value of switched value, either 0, if the <span> choice belongs to AGREGATE in select, or 1 if it belongs to GROUP BY.
+ * function creates a popover window over <span> choice element of AGREGATE. Function needs variable index to get which variable was clicked by user.
  * @param {number} i variable index in select.variables array
- * @param {number} switched current value of switched
  */
-function createPopUpWindowAgregate(i, switched) {
+function createPopUpWindowAgregate(i) {
 
     // get the variable by its index
     var variable = select.variables[i];
 
     var variableName = variable.name;
+    var switched = variable.switched;
 
     var title = "<strong>" + variableName + "</strong> - max. cardinality != 1";
 
@@ -560,17 +559,16 @@ function getVariableByName(variableName) {
 }
 
 /**
- * function creates a popover window over <span> choice element of OPTIONAL. Function needs triple id to get which triple was clicked by user. Switched is the current
- * value of switched value, either 0, if the <span> choice is of element in OPTIONAL wrap or 1 if it is outside OPTIONAL wrap
+ * function creates a popover window over <span> choice element of OPTIONAL. Function needs triple id to get which triple was clicked by user. 
  * @param {number} id triple id
- * @param {number} switched switched value
  */
-function createPopUpWindowCardinality(id, switched) {
+function createPopUpWindowCardinality(id) {
 
     // we get the triple by the triple id
     var rdf = getWhereById(id, select.where);
 
     var object = rdf.object;
+    var switched = rdf.switched;
 
     // properties have object with the beginning symbol "?", so we just get rid of it
     if (object.includes("?")) {
@@ -658,7 +656,7 @@ function printSelectQuery() {
 
             if (variable.switched == 0) {
                 // variable is not switched - print AGREGATE version with <span> choice
-                print += " (count(<span class='choice' id='" + variable.name + "' onClick='createPopUpWindowAgregate(" + i + ", " + variable.switched + ")\' data-toggle='popover'>" + "?" + variable.name + ")</span> as ?count" + variable.name + ")<br>";
+                print += " (count(<span class='choice' id='" + variable.name + "' onClick='createPopUpWindowAgregate(" + i + ")' data-toggle='popover'>" + "?" + variable.name + ")</span> as ?count" + variable.name + ")<br>";
 
             } else {
                 // variable is switched - print normal version
@@ -705,7 +703,7 @@ function printSelectQuery() {
 
             if (variable.switched == 1) {
                 // we are switched, print variable with <span> choice
-                print += "<span class='choice' id='" + variable.name + "' onClick='createPopUpWindowAgregate(" + i + ", " + variable.switched + ")' data-toggle='popover'>" + "?" + variable.name + "</span>" + " ";
+                print += "<span class='choice' id='" + variable.name + "' onClick='createPopUpWindowAgregate(" + i +  ")' data-toggle='popover'>" + "?" + variable.name + "</span>" + " ";
 
             } else if (variable.switched == 0) {
                 // nothing - variable is AGREGATE in select variables
@@ -746,9 +744,9 @@ function printRDFTriple(child) {
  */
 function printRDFTripleOptional(child, wrapped) {
     if (wrapped) {
-        return " OPTIONAL { " + "?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + " . } <br>";
+        return " OPTIONAL { " + "?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + " . } <br>";
     } else {
-        return " ?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ", " + child.switched + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + " .<br>";
+        return " ?" + child.subject + " " + "<span class='choice' id='" + child.id + "' onClick='" + "createPopUpWindowCardinality(" + child.id + ")' data-toggle='popover' >" + child.predicate + "</span>" + " " + child.object + " .<br>";
     }
 
 
