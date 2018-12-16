@@ -67,11 +67,11 @@ function highlight(obj) {
             highlightedElements.nodes[d.target.id] = 1;
         } else {
             highlightedElements.paths[d.id] = 0;
+            // unselecting a path - check if some node did notbecome isolated
+            unhighlightNodesIfNoPath();
         }
 
     }
-
-    console.log(highlightedElements);
 
 
     nodes.style("opacity", function (o) {
@@ -85,6 +85,34 @@ function highlight(obj) {
     pathTexts.style("opacity", function (o) {
         return highlightedElements.paths[o.id] == 1 ? 1 : 0.5;
     });
+}
+
+/**
+ * toggles highlight off from nodes that are isolated (no path exists between them and rest of highlighted nodes)
+ */
+function unhighlightNodesIfNoPath() {
+
+    for (var node in highlightedElements.nodes) {
+        var isolated = true;
+
+        for (var path in highlightedElements.paths) {
+            var p = graph.links[path];
+
+            // if the path in highlightedElements is 1 (active) and if the path source or target are our node - it is not isolated
+            if (highlightedElements.paths[path] == 1 && (p.source.id == node || p.target.id == node)) {
+                isolated = false;
+                break;
+                // breaking because we found at least one path
+            }
+        }
+
+        // beeing here means no path leads from or to our node - it is isolated
+        if (isolated) {
+            highlightedElements.nodes[node] = 0;
+        }
+
+    }
+
 }
 
 function prepareToRemoveSvgElement(obj) {

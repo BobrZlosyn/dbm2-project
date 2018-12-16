@@ -60,22 +60,8 @@ $(document).ready(function() {
   calculateNeighborhoodMatrix();
   applyStyle();
 
-  $(function () {
-      $('[data-toggle="popover"]').popover();
-      $('.choice1').popover({
-          title: "<strong>dcm:has_study</strong> - min. cardinality 0", content: `
-    <div class='radio'>
-      <label><input type='radio' name='optradio' checked='checked'>Select every <strong>Patient</strong>, regardless of the property.</label>
-    </div>
-    <div class='radio'>
-      <label><input type='radio' name='optradio'>Select only <strong>Patient</strong>s that are linked to some <strong>Study</strong>.</label>
-    </div>
-      `, html: true, placement: "right"
-        });
-
-    })
+ 
 });
-
 
 function createClassCheckboxes() {
   for (var count in check_value) {

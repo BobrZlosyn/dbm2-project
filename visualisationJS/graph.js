@@ -50,6 +50,8 @@ function triplesToGraph(triples, filterArray) {
         }
     });
 
+
+    console.log(graph);
     return graph;
 }
 
