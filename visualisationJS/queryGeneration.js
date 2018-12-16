@@ -181,7 +181,7 @@ function addSelectedPathToNode(v, supportV) {
         };
 
         // add only if variable not present
-        if (!select.variables.includes(variable)) {
+        if (getVariableByName(variable.name) == null) {
             select.variables.push(variable);
         }
 
@@ -248,7 +248,7 @@ function addSelectedPathToNode(v, supportV) {
                 rdfTriple.children.push(rdfType);
 
                 // add only if not already in variables
-                if (!select.variables.includes(variable)) {
+                if (getVariableByName(variable.name) == null) {
                     select.variables.push(variable);
                 }
 
@@ -262,7 +262,7 @@ function addSelectedPathToNode(v, supportV) {
             }
         }
     }
-}
+} 
 
 /**
  * function adds all highlighted neighbouring nodes of node v to man stack and the node itself to supportingStack ( so we know where we came from later)
@@ -330,7 +330,7 @@ function addSelectedProperties(v) {
         }
 
         // add only if not present in variables
-        if (!select.variables.includes(variable)) {
+        if (getVariableByName(variable.name) == null) {
             select.variables.push(variable);
         }
 
@@ -555,6 +555,8 @@ function getVariableByName(variableName) {
             return select.variables[i];
         }
     }
+
+    return null;
 
 }
 
