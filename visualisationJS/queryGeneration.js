@@ -732,7 +732,7 @@ function printSelectQuery() {
 /**
  * prints triple's where statement. No optional wrap and no <span>
  * @param {Object} child
- * @returns string of triple's where statement 
+ * @returns {string} string of triple's where statement 
  */
 function printRDFTriple(child) {
     return " ?" + child.subject + " " + child.predicate + " " + child.object + " .<br>";
@@ -742,7 +742,7 @@ function printRDFTriple(child) {
  * prints triple's where statement with optional wrap. The statement is supported by <span> choice for switching the OPTIONAL wrap.
  * @param {Object} child RDF triple to print statement of
  * @param {boolean} wrapped whether to wrap the statement in OPTIONAL
- * @returns child's where statement with or without OPTIONAL wrap and with <span> choice
+ * @returns {string} child's where statement with or without OPTIONAL wrap and with <span> choice
  */
 function printRDFTripleOptional(child, wrapped) {
     if (wrapped) {
@@ -758,7 +758,7 @@ function printRDFTripleOptional(child, wrapped) {
  *  prints a child's where statement, then recursively all its childs
  * @param {Object} child rdf triple where statement
  * @param {boolean} optional whether parent was OPTIONAL 
- * @returns string of the child's where statement (and its children)
+ * @returns {string} string of the child's where statement (and its children)
  */
 function printChild(child, optional) {
 
@@ -835,7 +835,7 @@ function printChild(child, optional) {
 
 /**
  * finds a starting node which has no incoming paths
- * @returns first starting node found
+ * @returns {number} first starting node id found
  */
 function findStartingNode() {
 
