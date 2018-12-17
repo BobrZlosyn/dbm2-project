@@ -8,6 +8,7 @@ var pathTexts;
 
 //Toggle stores whether the highlighting is on
 var toggle = 0;
+var toggleTry = 0;
 //Create an array logging what is connected to what
 var linkedByIndex = {};
 
@@ -22,10 +23,24 @@ var force;
 var graph;
 var check_value;
 
+/*povoluje klikat na uzly pri funkci B*/
+var enableClickableNodeB;
 
+/*zmeni pouzivanou funkci na odstraneni uzlu
+ false -> odstraneni,
+ true -> zneviditelneni
+  */
+var removePathEnable;
+
+
+var hidden = [];
 var parentElement;
 
+
 $(document).ready(function() {
+  enableClickableNodeB = false;
+  removePathEnable = false;
+
   highlightedElements = { nodes: {}, paths: {} };
   //prepare data
   triples = INPUT_DATA.Triples;
@@ -92,8 +107,12 @@ function createClassCheckboxes() {
       newCheckBox.value = check_value[count];
       newCheckBox.checked = true;
 
+      if (removePathEnable == true) {
+        newCheckBox.setAttribute("onclick", "removePath('" + newCheckBox.id + "')");
+      }else {
+        newCheckBox.setAttribute("onclick", "hidePaths('" + newCheckBox.id + "')");
+      }
 
-      newCheckBox.setAttribute("onclick", "removePath('" + newCheckBox.id + "')");
       newCheckBox.setAttribute("style", "display: inline-block");
 
       var label = document.createElement('label');
@@ -108,9 +127,26 @@ function createClassCheckboxes() {
   }
 }
 
-function removePath(checkboxId) {
+/*zneviditelneni vybrane hrany a uzly podle checkboxu*/
+function hidePaths(checkboxId) {
+  var info = $("#" + checkboxId).val().split(":");
+  var labelBox;
+  if (info.length > 1) {
+    labelBox = info[1];
+  }else {
+    labelBox = info[0];
+  }
+  for (var i = 0; i < graph.nodes.length; i++) {
+       nodeLabel = graph.nodes[i].label;
+       if (nodeLabel == labelBox) {
+         hideSelectedPaths(graph.nodes[i], $("#" + checkboxId).is(":checked"));
+         return;
+       }
+   }
+}
 
-    console.log($("#" + checkboxId).is(":checked"));
+/*odstrani vybrane hrany a uzly podle checkboxu*/
+function removePath(checkboxId) {
       if($("#" + checkboxId).is(":checked")) {
          var array = checkCheckboxes();
          graph = triplesToGraph(triples, array);

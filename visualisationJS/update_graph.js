@@ -107,7 +107,7 @@ function update() {
 
     // ==================== Force ====================
     force.on("tick", function () {
-        nodes
+       nodes
             .attr("cx", function (d) { return d.x; })
             .attr("cy", function (d) { return d.y; })
             ;
@@ -132,7 +132,7 @@ function update() {
             .attr("y", function (d) { return d.y - 10; })
             ;
 
-        nodes.each(collide(0.9));
+        nodes.each(collide(0));
 
 
     });
