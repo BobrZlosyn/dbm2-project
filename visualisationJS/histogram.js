@@ -1,7 +1,8 @@
 function drawHistogram(values) {
     const binCount = 10;
     var color = "steelblue";
-
+    var vals = transformSimpleArrayToKeyValue(values);
+    console.log(vals);
     d3.select("#svgHistogram").remove();
 
 
@@ -218,8 +219,39 @@ function transformKeyValueToObjectArray(array) {
 function transformObjectArrayToKeyValue(array) {
   var newArray = [];
   for (var i = 0; i < array.length; i++) {
-
       newArray[array[i].number] = array[i].count;
+  }
+  return newArray;
+}
+
+
+/*
+  takes key-value array and convert it to simple array
+*/
+function transformKeyValueToSimpleArray(array) {
+  var newArray = [];
+  for (var key in array) {
+    var number = parseInt(key, 10) ;
+    for (var i = 0; i < array[key]; i++) {
+      newArray.push(number);
+    }
+  }
+  return newArray;
+}
+
+/*
+  takes simple array and convert it to key-value
+*/
+function transformSimpleArrayToKeyValue(array) {
+  var newArray = [];
+  for (var i = 0; i < array.length; i++) {
+    var pom = newArray["" + array[i]];
+    console.log(pom);
+    if(typeof pom == 'undefined') {
+      newArray["" + array[i]] = 1;
+    }else {
+      newArray["" + array[i]]++;
+    }
   }
   return newArray;
 }

@@ -9,7 +9,7 @@ function clickedElement() {
     if (selectedMode == 'a') {
         //
     } else if (selectedMode == 'b') {
-      if ($(this).prop("tagName") != "circle") {
+      if ($(this).prop("tagName") != "circle" || enableClickableNodeB) {
         showInfo(this);
       }
     } else if (selectedMode == 'c') {
@@ -115,6 +115,7 @@ function unhighlightNodesIfNoPath() {
 
 }
 
+/* transforming data for removing element*/
 function prepareToRemoveSvgElement(obj) {
   d = obj.__data__;
 
@@ -123,6 +124,7 @@ function prepareToRemoveSvgElement(obj) {
   }
 }
 
+/* removing element*/
 function removeSvgElement(d) {
         graph.nodes.splice(d.index, 1);
         graph.links = graph.links.filter(function (el) { return el.source.id != d.id && el.target.id != d.id; });
@@ -191,6 +193,7 @@ function removeSvgElement(d) {
         console.log(graph);
 }
 
+/*hleda nejlbizsi okoli a zbytek skryva*/
 function connectedNodes(obj) {
     if (toggle == 0) {
         //Reduce the opacity of all but the neighbouring nodes
@@ -219,4 +222,82 @@ function connectedNodes(obj) {
         pathTexts.style("opacity", 1);
         toggle = 0;
     }
+}
+
+/*skryva vybrane uzly a jejich hrany*/
+function hideSelectedPaths(d, toggle) {
+    if (toggle == false) {
+        opacitySet(d, true);
+
+    } else {
+      opacitySet(d, false);
+    }
+}
+
+/*nastavuje pruhlednost prvku podle toho zda maji byt odstraneny nebo ne*/
+function opacitySet(d, isRemove) {
+  //Reduce the opacity of all but the neighbouring nodes
+  nodes.style("opacity", function (o) {
+      return setNodesOpacity(d, o, isRemove, true);
+  });
+  paths.style("opacity", function (o) {
+    return setPathOpacity(d, o, isRemove);
+  });
+  nodeTexts.style("opacity", function (o) {
+      return setNodesOpacity(d, o, isRemove, false);
+  });
+  pathTexts.style("opacity", function (o) {
+      return setPathOpacity(d, o, isRemove)
+  });
+}
+
+/*obsah anonymni tridy pro zneviditelneni cest*/
+function setPathOpacity(d, o, isRemove) {
+  if (isRemove) {
+
+      if ((d.id == o.source.id | d.id == o.target.id) && hidden.includes(d.id)) {
+        return 0;
+      } else {
+        if ( !hidden.includes(o.source.id) && !hidden.includes(o.target.id)) {
+          return 1;
+        }
+        return 0;
+      }
+  }
+
+  if (!isRemove) {
+      if ( hidden.includes(o.source.id) | hidden.includes(o.target.id)) {
+        return 0;
+      }
+      return 1;
+  }
+}
+
+/*obsah anonymni tridy pro zneviditelneni uzlu*/
+function setNodesOpacity(d, o, isRemove, isNode) {
+  if (isRemove) {
+      if (o.id == d.id || hidden.includes(o.id)) {
+        if (!hidden.includes(o.id) && isNode) {
+          hidden.push(o.id);
+        }
+
+        return 0;
+      } else {
+        return 1;
+      }
+  }
+
+  if (!isRemove) {
+
+      if (o.id == d.id  && isNode) {
+        hidden.splice(hidden.indexOf(o.id), 1);
+        return 1;
+      }
+
+      if ( hidden.includes(o.id)) {
+        return 0;
+      }
+
+      return 1;
+  }
 }
