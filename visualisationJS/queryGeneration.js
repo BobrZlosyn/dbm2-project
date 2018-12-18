@@ -13,19 +13,22 @@ var tripleID = 0;
  */
 function generateQuery() {
 
+    document.getElementById("graphConnected").innerHTML = "";
+    document.getElementById("moreWays").innerHTML = "";
+
     // find a node that only has outcoming paths and no incoming
     var start = findStartingNode();
 
     if (start == null) {
         // no starting node - can not generate query
-        document.getElementById("query").innerHTML = "<p class='error'>No starting node found!</p>";
+        document.getElementById("query").innerHTML = "Fatal ereror, no starting node found! Cannot generate query.";
         return;
     }
 
     // check graph for two problems - unconnected graph and more paths leading to the same node
-    if (!checkGraph(start)) {
-        return;
-    }
+    /*if (!checkGraph(start)) {
+       return;
+    }*/
 
     // initialize new select statement
     select.variables = [];
@@ -40,10 +43,28 @@ function generateQuery() {
     // since supportStack contains latest destination (Study) we can easily find the path which we took there
     var stack = [];
     var supportingStack = [];
+    var visited = [];
 
     // we are starting in start node
     stack.push(start);
     supportingStack.push(start);
+
+    // search the graph
+    DFS(stack, supportingStack, visited);
+
+    // finally print the query to HTML
+    printSelectQuery();
+
+}
+
+/**
+ *  function to search graph using DFS method. 
+ * 
+ * @param {Array.<number>} stack  
+ * @param {Array.<number>} supportingStack 
+ * @param {Array.<number>} visited 
+ */
+function DFS(stack, supportingStack, visited) {
 
     // DFS
     // continue until there is something in stack
@@ -52,6 +73,13 @@ function generateQuery() {
         // get last node from stacks
         var v = stack.pop();
         var supportV = supportingStack.pop();
+
+        // if visited stack contains our node, problem of more ways to one node
+        if (visited.includes(v)) {
+            document.getElementById("moreWays").innerHTML = "Warning, there are more ways to one node! Caution advised!";
+        }
+
+        visited.push(v);
 
         // add where we arrived from (RDF rdf:type triple) - the main purpose of supporting stack
         addSelectedPathToNode(v, supportV);
@@ -64,12 +92,24 @@ function generateQuery() {
 
     }
 
-    // finally print the query to HTML
-    printSelectQuery();
+    // if we did not get to all nodes, graph is not connected - try to find a starting not visited node and search the rest of the graph
+    if (getNumberOfHighlightedNodes() != visited.length) {
+        document.getElementById("graphConnected").innerHTML = "Warning, it is not possible to get to all nodes from the starting node! Caution advised";
+        var notConncetedV = findStartingNodeNotVisited(visited);
+        if (notConncetedV != null) {
+            stack.push(notConncetedV);
+            supportingStack.push(notConncetedV);
+            
+            DFS(stack, supportingStack, visited);
+        }
+    }
 
 }
 
 /**
+ * 
+ * this function is atm not used anywhere - it has been replaced by DFS (which does the same)
+ * 
  * function to check validity of graph - it is connected and there are no more than one way to all nodes
  * 
  * it works by simply DFS-ing through graph from the starting node. Additional stack of visited is declared and all already visited nodes are added there. 
@@ -99,7 +139,7 @@ function checkGraph(start) {
 
         // if visited stack contains our node, problem of more ways to one node
         if (visited.includes(v)) {
-            document.getElementById("query").innerHTML = "<p class='error'>There are more ways to one node!</p>";
+            document.getElementById("err").innerHTML = "Warning, there are more ways to one node! Caution advised!";
             return false;
         }
 
@@ -113,7 +153,7 @@ function checkGraph(start) {
 
     // check the number of highlighted nodes of type == 1 and number of visited nodes
     if (getNumberOfHighlightedNodes() != visited.length) {
-        document.getElementById("query").innerHTML = "<p class='error'>Not possible to get to all nodes from starting node!!</p>";
+        document.getElementById("err").innerHTML = "Wartning, it is not possible to get to all nodes from the starting node! Caution advised";
         return false;
     }
 
@@ -262,7 +302,7 @@ function addSelectedPathToNode(v, supportV) {
             }
         }
     }
-} 
+}
 
 /**
  * function adds all highlighted neighbouring nodes of node v to man stack and the node itself to supportingStack ( so we know where we came from later)
@@ -678,16 +718,21 @@ function printSelectQuery() {
 
     for (var i = 0; i < select.where.length; i++) {
         var where = select.where[i];
-
+        
         // print the starting triple
         print += printRDFTriple(where);
 
         // print the rest
-        for (var i = 0; i < where.children.length; i++) {
+        if (where.children != null || where.children != undefined) {
 
-            print += printChild(where.children[i], where.optional);
+            for (var j = 0; j < where.children.length; j++) {
 
+                var child = where.children[j];
+                print += printChild(child, where.optional);
+    
+            }
         }
+        
     }
 
     // end of WHERE
@@ -705,7 +750,7 @@ function printSelectQuery() {
 
             if (variable.switched == 1) {
                 // we are switched, print variable with <span> choice
-                print += "<span class='choice' id='" + variable.name + "' onClick='createPopUpWindowAgregate(" + i +  ")' data-toggle='popover'>" + "?" + variable.name + "</span>" + " ";
+                print += "<span class='choice' id='" + variable.name + "' onClick='createPopUpWindowAgregate(" + i + ")' data-toggle='popover'>" + "?" + variable.name + "</span>" + " ";
 
             } else if (variable.switched == 0) {
                 // nothing - variable is AGREGATE in select variables
@@ -844,6 +889,43 @@ function findStartingNode() {
         var incoming = false;
 
         if (highlightedElements.nodes[node] == 0) {
+            continue;
+        }
+
+        for (var path in highlightedElements.paths) {
+            var p = graph.links[path];
+
+            if (highlightedElements.paths[path] == 1 // selected path
+                && p.target.id == node) { // path leads to our node
+                incoming = true;
+                break;
+            }
+
+        }
+
+        if (incoming == false) {
+            // starting node
+            return parseInt(node); // parse int makes sure it is a simple integer and not object
+        }
+
+    }
+
+    return null;
+
+}
+
+/**
+ * finds a starting node which has no incoming paths and war not yet visited
+ * @param {Array.<number>} visited array of visited nodes 
+ * @returns {number} first starting node id found
+ */
+function findStartingNodeNotVisited(visited) {
+
+    for (var node in highlightedElements.nodes) {
+
+        var incoming = false;
+
+        if (highlightedElements.nodes[node] == 0 || visited.includes(parseInt(node))) {
             continue;
         }
 
